@@ -1,1 +1,1 @@
-Tiempo total de procesamiento: 1.15s
+Tiempo total de procesamiento: 1.67s

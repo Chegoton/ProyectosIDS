@@ -14,12 +14,12 @@ if (!fs.existsSync(outputDirectory)) {
 
 const startTotalTime = performance.now();
 let wordDictionary = {};
-let postingContent = '';
+let postingContent = {};
 
 const files = fs.readdirSync(inputDirectory);
-let postingStartPosition = 0;
 
 files.forEach((file, index) => {
+    const fileStartTime = performance.now(); // Tiempo de inicio para el archivo actual
     const filePath = path.join(inputDirectory, file);
     const content = fs.readFileSync(filePath, 'utf8');
     const words = content.match(/\b[\w']+\b/g) || [];
@@ -42,23 +42,41 @@ files.forEach((file, index) => {
     });
 
     for (const [word, count] of Object.entries(wordCountInFile)) {
-        postingContent += `${file}\t${count}\n`;
+        if (!Array.isArray(postingContent[word])) {
+            postingContent[word] = [];
+        }
+        postingContent[word].push({ file, count });
     }
 
-    if (index === files.length - 1) {
-        postingStartPosition = postingContent.length;
-    }
+    const fileEndTime = performance.now(); // Tiempo de finalización para el archivo actual
+    const fileProcessingTime = ((fileEndTime - fileStartTime) / 1000).toFixed(2); // Tiempo total de procesamiento del archivo
+    console.log(`Archivo "${file}" procesado en ${fileProcessingTime}s`);
 });
 
 let dictionaryContent = "Token;Número de documentos;Posición del primer registro\n";
-let postingStartPositionString = postingStartPosition.toString();
+let currentPostingPosition = 0;
+
 for (const [word, data] of Object.entries(wordDictionary)) {
-    dictionaryContent += `${word};${data.files.size};${postingStartPositionString}\n`;
-    postingStartPositionString = (parseInt(postingStartPositionString) + data.files.size).toString();
+    dictionaryContent += `${word};${data.files.size};${currentPostingPosition}\n`;
+    currentPostingPosition += `${word}\t${data.files.size}\n`.length; // Actualizar la posición para el siguiente token
 }
 
 fs.writeFileSync(dictionaryFile, dictionaryContent);
-fs.writeFileSync(postingFile, postingContent);
+
+// Ordenar el postingContent alfabéticamente por las palabras
+const sortedPostingContent = Object.keys(postingContent).sort().reduce((obj, key) => {
+    obj[key] = postingContent[key];
+    return obj;
+}, {});
+
+// Escribir el contenido ordenado en el archivo de posting
+let postingContentText = "";
+for (const [word, entries] of Object.entries(sortedPostingContent)) {
+    for (const entry of entries) {
+        postingContentText += `${entry.file}\t${entry.count}\n`;
+    }
+}
+fs.writeFileSync(postingFile, postingContentText);
 
 const endTotalTime = performance.now();
 const totalTime = ((endTotalTime - startTotalTime) / 1000).toFixed(2);
