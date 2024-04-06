@@ -1,0 +1,5 @@
+Tiempo total de procesamiento: 0 segundos
+Tiempo de procesamiento por archivo:
+documento1.txt: 0 segundos
+documento2.txt: 0 segundos
+documento3.txt: 0 segundos

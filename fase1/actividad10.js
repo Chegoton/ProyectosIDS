@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from "fs";
 
 // Función para calcular tf.idf Weight
 function calcularTFIDF(frecuenciaToken, numDocumentos, numDocumentosConToken) {
