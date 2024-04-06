@@ -53,7 +53,7 @@ files.forEach((file, index) => {
     console.log(`Archivo "${file}" procesado en ${fileProcessingTime}s`);
 });
 
-let dictionaryContent = "Token;Número de documentos;Posición del primer registro\n";
+let dictionaryContent = ""; // Eliminando la primera línea
 let currentPostingPosition = 0;
 
 for (const [word, data] of Object.entries(wordDictionary)) {
@@ -61,7 +61,7 @@ for (const [word, data] of Object.entries(wordDictionary)) {
     currentPostingPosition += `${word}\t${data.files.size}\n`.length; // Actualizar la posición para el siguiente token
 }
 
-fs.writeFileSync(dictionaryFile, dictionaryContent);
+fs.writeFileSync(dictionaryFile, dictionaryContent.trim()); // Utiliza trim() para eliminar espacios en blanco alrededor del contenido
 
 // Ordenar el postingContent alfabéticamente por las palabras
 const sortedPostingContent = Object.keys(postingContent).sort().reduce((obj, key) => {
