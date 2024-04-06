@@ -1,0 +1,2 @@
+Tiempo total de procesamiento: 1.05s
+Número de colisiones: 787275
