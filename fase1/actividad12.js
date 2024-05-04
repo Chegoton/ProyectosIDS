@@ -1,9 +1,7 @@
-import { log } from 'console';
 import fs from 'fs';
 import path from 'path';
 import { performance } from 'perf_hooks';
 import readline from 'readline';
-
 
 const outputDirectory = process.argv[2];
 const wordToFind = process.argv[3].toLowerCase(); 
@@ -11,9 +9,13 @@ const wordToFind = process.argv[3].toLowerCase();
 const dictionaryFile = path.join(outputDirectory, 'dictionary.txt');
 const postingFile = path.join(outputDirectory, 'posting.txt');
 const documentFile = path.join(outputDirectory, 'document.txt'); 
-const logFile = path.join(outputDirectory, 'a12_2911575.txt');
+const logFile = path.join(outputDirectory, 'a12_matricula.txt'); 
 
 const startTotalTime = performance.now();
+
+async function logToFile(message) {
+    fs.appendFileSync(logFile, `${message}\n`);
+}
 
 async function findWordInDictionary(file, word) {
     const fileStream = fs.createReadStream(file);
@@ -22,26 +24,22 @@ async function findWordInDictionary(file, word) {
         crlfDelay: Infinity
     });
 
-    console.log(`Iniciando la búsqueda de la palabra '${word}' en el archivo: ${file}`);
-
+    await logToFile(`Iniciando la búsqueda de la palabra '${word}' en el archivo: ${file}`);
 
     for await (const line of rl) {
-
-        console.log(`Leyendo línea: ${line}`); // Log de cada línea leída
+        await logToFile(`Leyendo línea: ${line}`);
 
         if (line.includes(word)) {
-            console.log(`Palabra '${word}' encontrada en línea: ${line}`); // Log cuando se encuentra la palabra
-            const parts = line.split(';'); // Dividimos la línea en partes usando ';' como delimitador
-            if (parts[0] === word) { // Verificamos que la primera parte es la palabra que buscamos
-                console.log(`ID de la palabra encontrada: ${parts[1]}`); // Registramos el ID encontrado
-                return parts[1]; // Devolvemos el ID de la palabra
+            await logToFile(`Palabra '${word}' encontrada en línea: ${line}`);
+            const parts = line.split(';');
+            if (parts[0] === word) {
+                await logToFile(`ID de la palabra encontrada: ${parts[1]}`);
+                return parts[1];
             }
         }
     }
 
-
-    console.log(`Palabra '${word}' no encontrada en el archivo.`); // Log si la palabra no se encuentra en el archivo
-    
+    await logToFile(`Palabra '${word}' no encontrada en el archivo.`);
     return null;
 }
 
@@ -54,7 +52,6 @@ async function findDocumentsByWordId(postingFile, wordId) {
     const documentIds = [];
 
     for await (const line of rl) {
-        
         const parts = line.split('\t');
         if (parts[0] === wordId) {
             documentIds.push(parts[1]);
@@ -67,19 +64,23 @@ async function findDocumentsByWordId(postingFile, wordId) {
 async function main() {
     const wordId = await findWordInDictionary(dictionaryFile, wordToFind);
     if (!wordId) {
-        console.log('Palabra no encontrada en el diccionario.');
+        await logToFile('Palabra no encontrada en el diccionario.');
         return;
     }
-
-    console.log("wordID" + wordId);
 
     const documentIds = await findDocumentsByWordId(postingFile, wordId);
     if (documentIds.length === 0) {
-        console.log('No se encontraron documentos con la palabra especificada.');
+        await logToFile('No se encontraron documentos con la palabra especificada.');
         return;
     }
 
-    console.log('Documentos que contienen la palabra:', documentIds.join(', '));
+    await logToFile(`Documentos que contienen la palabra: ${documentIds.join(', ')}`);
 }
 
-main();
+main().then(() => {
+    const endTotalTime = performance.now();
+    const totalTime = (endTotalTime - startTotalTime).toFixed(2);
+    logToFile(`Tiempo total de ejecución: ${totalTime} milisegundos`).then(() => {
+        console.log(`Ejecución completada en ${totalTime} milisegundos`);
+    });
+});
